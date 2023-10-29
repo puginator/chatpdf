@@ -1,15 +1,15 @@
-import { stripe } from "@/lib/stripe";
-import {headers} from 'next/headers'
+import {db} from "@/lib/db";
+import {userSubscriptions} from "@/lib/db/schema";
+import {stripe} from "@/lib/stripe";
+import {eq} from "drizzle-orm";
+import {headers} from "next/headers";
+import {NextResponse} from "next/server";
 import Stripe from "stripe";
-import { NextResponse } from 'next/server'
-import { userSubscriptions } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { db } from "@/lib/db";
 
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const signature = headers().get('Stripe-Signature') as string;
+  const signature = headers().get("Stripe-Signature") as string;
   let event: Stripe.Event;
 
   try {
@@ -19,37 +19,42 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SIGNING_SECRET as string
     );
   } catch (error) {
-    return new NextResponse('webhook error', {status: 400});
+    return new NextResponse("webhook error", {status: 400});
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
 
-  //new subscription created
-  if (event.type === 'checkout.session.completed') {
-    const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-    console.log('checkout session completed', session);
-  
+  // new subscription created
+  if (event.type === "checkout.session.completed") {
+    const subscription = await stripe.subscriptions.retrieve(
+      session.subscription as string
+    );
     if (!session?.metadata?.userId) {
-      return new NextResponse('no user id', {status: 400});
+      return new NextResponse("no userid", {status: 400});
     }
-
     await db.insert(userSubscriptions).values({
       userId: session.metadata.userId,
       stripeSubscriptionId: subscription.id,
       stripeCustomerId: subscription.customer as string,
       stripePriceId: subscription.items.data[0].price.id,
       stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-    })
+    });
   }
 
-  if (event.type === 'invoice.payment_succeeded') {
-    const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-  
-    await db.update(userSubscriptions).set({
-      stripePriceId: subscription.items.data[0].price.id,
-      stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-    }).where(eq(userSubscriptions.stripeSubscriptionId, subscription.id));
-
-    return new NextResponse(null, {status: 200})
+  if (event.type === "invoice.payment_succeeded") {
+    const subscription = await stripe.subscriptions.retrieve(
+      session.subscription as string
+    );
+    await db
+      .update(userSubscriptions)
+      .set({
+        stripePriceId: subscription.items.data[0].price.id,
+        stripeCurrentPeriodEnd: new Date(
+          subscription.current_period_end * 1000
+        ),
+      })
+      .where(eq(userSubscriptions.stripeSubscriptionId, subscription.id));
   }
+
+  return new NextResponse(null, {status: 200});
 }
