@@ -53,6 +53,5 @@ export async function POST(req: Request) {
       })
       .where(eq(userSubscriptions.stripeSubscriptionId, subscription.id));
   }
-
-  return new NextResponse(null, {status: 200});
+  return new NextResponse("ok", {status: 200});
 }
