@@ -53,11 +53,14 @@ export async function getMatchesFromEmbeddings(
 export async function getContext(query: string, fileKey: string) {
   const queryEmbeddings = await getEmbeddings(query);
   const matches = await getMatchesFromEmbeddings(queryEmbeddings, fileKey);
-  //console.log("matches", matches);
+  console.log("matches", matches);
   const qualifyingDocs = matches.filter(
     (match) => match.score && match.score > 0.7
   );
-
+  
+  if (qualifyingDocs.length === 0) {
+    return "We don't have enough information to answer that question";
+  }
   type Metadata = {
     text: string;
     pageNumber: number;

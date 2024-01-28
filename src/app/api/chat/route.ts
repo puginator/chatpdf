@@ -45,13 +45,13 @@ export async function POST(req: Request) {
     };
 
     const response = await openai.createChatCompletion({
-      model: 'gpt-3.5-turbo',
+      model: "gpt-4-0125-preview",
       messages: [
-        prompt, 
-        ...messages.filter((message: Message) => message.role === 'user'),
+        prompt,
+        ...messages.filter((message: Message) => message.role === "user"),
       ],
       stream: true,
-    })
+    });
 
     const stream = OpenAIStream(response, {
       onStart: async () => {

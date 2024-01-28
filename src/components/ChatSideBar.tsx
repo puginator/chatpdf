@@ -53,10 +53,10 @@ const ChatSideBar = ({chatId, chats, isPro}: Props) => {
               </Link>
             </div>
             {/* Stripe Button */}
-            <Button disabled={loading} onClick={handleSubscription} className="mt-2 text-white bg-slate-700">
+            {/* <Button disabled={loading} onClick={handleSubscription} className="mt-2 text-white bg-slate-700">
               Upgrade To Pro
             </Button>
-            <SubscriptionButton isPro={isPro} />
+            <SubscriptionButton isPro={isPro} /> */}
       </div>
     </div>
   )
